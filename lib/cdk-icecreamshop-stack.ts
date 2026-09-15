@@ -14,8 +14,14 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       runtime: Runtime.NODEJS_22_X,
       handler: 'handler.newOrder',
       code: Code.fromAsset('lib/functions'),
+        });   
+        
 
-        });                                                     
+      const getOrderFunction = new Function(this, 'getOrderFuncion', {
+      runtime: Runtime.NODEJS_22_X,
+      handler: 'handler.getOrder',
+      code: Code.fromAsset('lib/functions'),
+        });       
 
 
     //APIs
@@ -26,6 +32,9 @@ export class CdkIcecreamshopStack extends cdk.Stack {
 
     const orderResource = api.root.addResource('order');
     orderResource.addMethod('POST', new apigateway.LambdaIntegration(newOrderFunction));
-    
+    orderResource.addResource('{orderId}').addMethod('GET', new apigateway.LambdaIntegration(getOrderFunction));
+
+
+
          }
 }
