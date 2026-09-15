@@ -20,8 +20,11 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       runtime: Runtime.NODEJS_22_X,
       handler: 'handler.newOrder',
       code: Code.fromAsset('lib/functions'),
+      environment: {
+        QUEUE_URL: pendingOrdersQueue.queueUrl,
+      }
         });   
-        
+        pendingOrdersQueue.grantSendMessages(newOrderFunction);
 
       const getOrderFunction = new Function(this, 'GetOrderFuncion', {
       runtime: Runtime.NODEJS_22_X,
