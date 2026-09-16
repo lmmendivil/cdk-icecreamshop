@@ -4,6 +4,7 @@ import { Code, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
 
 
 
@@ -16,6 +17,15 @@ export class CdkIcecreamshopStack extends cdk.Stack {
     const pendingOrdersQueue = new Queue(this, 'PendingOrdersQueue', {});
     const ordersToSendQueue = new Queue(this, 'OrdersToSendQueue', {});
 
+
+    // DynamoDB tables
+    const ordersTable = new Table(this, 'OrdersTable', {
+      partitionKey: { name: 'orderId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+    });
+
+    
+
     //LAMBDA FUNCTIONS
      const newOrderFunction = new Function(this, 'NewOrderFuncion', {
       runtime: Runtime.NODEJS_22_X,
@@ -23,9 +33,11 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       code: Code.fromAsset('lib/functions'),
       environment: {
         QUEUE_URL: pendingOrdersQueue.queueUrl,
+        ORDERS_TABLE_NAME: ordersTable.tableName,
       }
         });   
         pendingOrdersQueue.grantSendMessages(newOrderFunction);
+        ordersTable.grantWriteData(newOrderFunction);
 
       const getOrderFunction = new Function(this, 'GetOrderFuncion', {
       runtime: Runtime.NODEJS_22_X,
@@ -52,6 +64,7 @@ export class CdkIcecreamshopStack extends cdk.Stack {
         });
 
       ordersToSendQueue.grantSendMessages(sendOrderFunction);
+      
 
 
 
