@@ -14,6 +14,7 @@ export class CdkIcecreamshopStack extends cdk.Stack {
 
     //SQS
     const pendingOrdersQueue = new Queue(this, 'PendingOrdersQueue', {});
+    const ordersToSendQueue = new Queue(this, 'OrdersToSendQueue', {});
 
     //LAMBDA FUNCTIONS
      const newOrderFunction = new Function(this, 'NewOrderFuncion', {
@@ -41,21 +42,37 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       
       prepOrderFunction.addEventSource(new SqsEventSource(pendingOrdersQueue, { batchSize: 1  }));
 
+      const sendOrderFunction = new Function(this, 'SendOrderFuncion', {
+      runtime: Runtime.NODEJS_22_X,
+      handler: 'handler.sendOrder',
+      code: Code.fromAsset('lib/functions'),
+      environment: {
+         ORDERS_TO_SEND_QUEUE_URL: ordersToSendQueue.queueUrl,
+      }
+        });
+
+      ordersToSendQueue.grantSendMessages(sendOrderFunction);
+
+
 
     //APIs
-    const api = new apigateway.RestApi(this, 'IceCreamShopAPI',{
+      const api = new apigateway.RestApi(this, 'IceCreamShopAPI',{
       restApiName: 'Ice Cream Shop Service',
       description: 'This service serves ice cream orders.'
       });
 
-    const orderResource = api.root.addResource('order');
-    orderResource.addMethod('POST', new apigateway.LambdaIntegration(newOrderFunction));
-    orderResource.addResource('{orderId}').addMethod('GET', new apigateway.LambdaIntegration(getOrderFunction));
+      const orderResource = api.root.addResource('order');
+      orderResource.addMethod('POST', new apigateway.LambdaIntegration(newOrderFunction));
+      orderResource.addResource('{orderId}').addMethod('GET', new apigateway.LambdaIntegration(getOrderFunction));
 
 
-    new cdk.CfnOutput(this, 'PendingOrdersQueueUrl', {
-  value: pendingOrdersQueue.queueUrl,
-});
+      new cdk.CfnOutput(this, 'PendingOrdersQueueUrl', {
+      value: pendingOrdersQueue.queueUrl,
+      });
+
+      new cdk.CfnOutput(this, 'OrdersToSendQueueURL', {
+      value: ordersToSendQueue.queueUrl,
+      });
 
 
 
