@@ -50,10 +50,20 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       runtime: Runtime.NODEJS_22_X,
       handler: 'handler.prepOrder',
       code: Code.fromAsset('lib/functions'),
-        });  
+
+      environment: {
+        QUEUE_URL: pendingOrdersQueue.queueUrl,
+        ORDERS_TABLE_NAME: ordersTable.tableName,
+      }
+        });
       
       prepOrderFunction.addEventSource(new SqsEventSource(pendingOrdersQueue, { batchSize: 1  }));
 
+
+      ordersTable.grantWriteData(newOrderFunction);
+
+
+      
       const sendOrderFunction = new Function(this, 'SendOrderFuncion', {
       runtime: Runtime.NODEJS_22_X,
       handler: 'handler.sendOrder',
