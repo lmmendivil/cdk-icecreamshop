@@ -39,11 +39,19 @@ export class CdkIcecreamshopStack extends cdk.Stack {
         pendingOrdersQueue.grantSendMessages(newOrderFunction);
         ordersTable.grantWriteData(newOrderFunction);
 
+
+
       const getOrderFunction = new Function(this, 'GetOrderFuncion', {
       runtime: Runtime.NODEJS_22_X,
       handler: 'handler.getOrder',
       code: Code.fromAsset('lib/functions'),
+      environment: {
+        ORDERS_TABLE_NAME: ordersTable.tableName,
+      }
         });       
+
+      ordersTable.grantReadData(getOrderFunction);
+
 
 
       const prepOrderFunction = new Function(this, 'PrepOrderFuncion', {
@@ -52,7 +60,6 @@ export class CdkIcecreamshopStack extends cdk.Stack {
       code: Code.fromAsset('lib/functions'),
 
       environment: {
-        QUEUE_URL: pendingOrdersQueue.queueUrl,
         ORDERS_TABLE_NAME: ordersTable.tableName,
       }
         });
