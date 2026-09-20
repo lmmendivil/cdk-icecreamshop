@@ -65,9 +65,7 @@ export class CdkIcecreamshopStack extends cdk.Stack {
         });
       
       prepOrderFunction.addEventSource(new SqsEventSource(pendingOrdersQueue, { batchSize: 1  }));
-
-
-      ordersTable.grantWriteData(newOrderFunction);
+      ordersTable.grantWriteData(prepOrderFunction);
 
 
       
