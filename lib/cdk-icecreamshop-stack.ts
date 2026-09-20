@@ -1,10 +1,10 @@
 import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
-import { Code, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
+import { Code, Runtime, Function, StartingPosition, FilterCriteria } from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { DynamoEventSource, SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { AttributeType, BillingMode, StreamViewType, Table } from 'aws-cdk-lib/aws-dynamodb';
 
 
 
@@ -22,6 +22,7 @@ export class CdkIcecreamshopStack extends cdk.Stack {
     const ordersTable = new Table(this, 'OrdersTable', {
       partitionKey: { name: 'orderId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
+      stream: StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     
@@ -81,6 +82,17 @@ export class CdkIcecreamshopStack extends cdk.Stack {
 
       ordersToSendQueue.grantSendMessages(sendOrderFunction);
       
+      sendOrderFunction.addEventSource(new DynamoEventSource(ordersTable, {
+      startingPosition: StartingPosition.LATEST,
+      batchSize: 1,
+      filters: [
+        FilterCriteria.filter({
+          eventName: ['MODIFY']
+        })
+      ]
+       }));
+
+      ordersTable.grantStreamRead(sendOrderFunction);
 
 
 
